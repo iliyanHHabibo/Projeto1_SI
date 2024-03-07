@@ -1,11 +1,11 @@
 from searchPlus import *
 
 line1 = "= = = = = = =\n"
-line2 = "= x . . . . =\n"
+line2 = "= x . . . v =\n"
 line3 = "= . . . = . =\n"
 line4 = "= . . . = . =\n"
 line5 = "= = = . = . =\n"
-line6 = "= . . . . ^ =\n"
+line6 = "= . . . . . =\n"
 line7 = "= = = = = = =\n"
 grelha = line1 + line2 + line3 + line4 + line5 + line6 + line7
 
@@ -71,29 +71,28 @@ class Labirinto(Problem):
         #check se o veiculo pode acelerar
         if self.orientacao == 'N':
             if state[0] - self.vcurrent >= 0 : #se a velocidade for menor que a posicao do veiculo nao vamos out of bounds
-                if self.LabInicial[state[0] - self.vcurrent + 1] [state[1]] != "=": #se a posicao seguinte nao for um obstaculo. adicionamos mais 1 a velocidade para ver a posicao seguinte e se nao calha num obstaculo
-                    print (self.LabInicial[state[0] - self.vcurrent + 1])
-                    if self.vcurrent < self.vmax: #se a velocidade for menor que a velocidade maxima
-                        accoes.append('A')
+                if self.vcurrent < self.vmax: #se a velocidade for menor que a velocidade maxima
+                    if self.LabInicial[state[0] - self.vcurrent - 1] [state[1]] != "=": #se a posicao seguinte nao for um obstaculo. subtraimos mais 1 a velocidade para ver a posicao seguinte e se nao calha num obstaculo
+                            accoes.append('A')
 
         if self.orientacao == 'S': 
             if state[0] + self.vcurrent < self.height: 
-                if self.LabInicial[state[0] + self.vcurrent] [state[1]] != "=":
-                    if self.vcurrent < self.vmax:
-                        accoes.append('A')
+                if self.vcurrent < self.vmax:
+                    if self.LabInicial[state[0] + self.vcurrent + 1] [state[1]] != "=": #adicionamos mais 1 a velocidade para ver a posicao seguinte e se nao calha num obstaculo
+                            accoes.append('A')
 
         if self.orientacao == 'E':
             if state[1] + self.vcurrent < self.width:
-                if self.LabInicial[state[0]] [state[1] + self.vcurrent] != "=":
-                    if self.vcurrent < self.vmax:
-                        accoes.append('A')
+                if self.vcurrent < self.vmax:
+                    if self.LabInicial[state[0]] [state[1] + self.vcurrent + 1] != "=":
+                            accoes.append('A')
 
         if self.orientacao == 'O':
             if state[1] - self.vcurrent > 0:
-                if self.LabInicial[state[0]] [state[1] - self.vcurrent] != "=":
-                    if self.vcurrent < self.vmax:
-                        accoes.append('A')
-                    
+                if self.vcurrent < self.vmax:
+                    if self.LabInicial[state[0]] [state[1] - self.vcurrent - 1] != "=":  
+                            accoes.append('A')
+                        
         #check se o veiculo pode travar        
         if self.vcurrent > 0:
             accoes.append('T')
@@ -142,6 +141,7 @@ print (l.orientacao)
 print (l.goal)
 print (l.height)
 print (l.width)
+print(l.vcurrent)
 print(l.actions(l.initial))
 
 
