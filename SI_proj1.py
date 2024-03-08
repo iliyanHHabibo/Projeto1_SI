@@ -62,47 +62,35 @@ class Labirinto(Problem):
         #estado inicial
         self.initial = (self.coordenadas, self.orientacao, self.vcurrent)
 
-    def actions(self, state): #estado é a posicao do veiculo (M,N) 
-        (coordenadas, orientacao, vcurrent) = state
-        accoes = []
+    def actions(self, state):
+        """Return the actions that can be executed in the given state."""
+        coordenadas, direcao, vcurrent = state
+        vmax = self.vmax
+        possible_actions = []
 
-        #se o veiculo estiver parado, pode virar para a esquerda ou para a direita
-        #check se o veiculo pode virar para a esquerda ou para a direita
-        if vcurrent == 0:
-            accoes.append('E')
-            accoes.append('D')
+    # Check if the car can accelerate ('A')
+        if vcurrent < vmax:
+        # Check next position based on current direction and make sure it's not a wall
+            next_pos = self.calculate_next_position(coordenadas, direcao, vcurrent + 1)
+            if self.is_within_bounds(next_pos) and self.LabInicial[next_pos[0]][next_pos[1]] != '=':
+                possible_actions.append('A')
 
-        #check se o veiculo pode acelerar
-        if orientacao == 'N':
-            if coordenadas[0] - self.vcurrent >= 0 : #se a velocidade for menor que a posicao do veiculo nao vamos out of bounds
-                if vcurrent < self.vmax: #se a velocidade for menor que a velocidade maxima
-                    if self.LabInicial[coordenadas[0] - vcurrent - 1] [coordenadas[1]] != "=": #se a posicao seguinte nao for um obstaculo. subtraimos mais 1 a velocidade para ver a posicao seguinte e se nao calha num obstaculo
-                            accoes.append('A')
-
-        if orientacao == 'S': 
-            if coordenadas[0] + vcurrent < self.height: 
-                if vcurrent < self.vmax:
-                    if self.LabInicial[coordenadas[0] + vcurrent + 1] [coordenadas[1]] != "=": #adicionamos mais 1 a velocidade para ver a posicao seguinte e se nao calha num obstaculo
-                            accoes.append('A')
-
-        if orientacao == 'E':
-            if coordenadas[1] + vcurrent < self.width:
-                if vcurrent < self.vmax:
-                    if self.LabInicial[coordenadas[0]] [coordenadas[1] + vcurrent + 1] != "=":
-                            accoes.append('A')
-
-        if orientacao == 'O':
-            if coordenadas[1] - vcurrent > 0:
-                if vcurrent < self.vmax:
-                    if self.LabInicial[coordenadas[0]] [coordenadas[1] - vcurrent - 1] != "=":  
-                            accoes.append('A')
-                        
-        #check se o veiculo pode travar        
+    # Check if the car can brake ('T') without going below zero speed
         if vcurrent > 0:
-            accoes.append('T')
-        
-        #retornamos a lista de accoes ordenada alfabeticamente
-        return sorted(accoes)
+        # Check next position based on current direction at one less speed (decelerating)
+            next_pos = self.calculate_next_position(coordenadas, direcao, vcurrent - 1)
+            if self.is_within_bounds(next_pos) and self.LabInicial[next_pos[0]][next_pos[1]] != '=':
+                possible_actions.append('T')
+
+    # Check if the car can turn left ('E') or right ('D'), only if the speed is 0
+        if vcurrent == 0:
+            possible_actions.extend(['E', 'D'])
+
+    # Return actions sorted alphabetically
+        return sorted(possible_actions)
+
+
+      
 
     def result(self, state, action):
         (coordenadas, orientacao, vcurrent) = state
@@ -200,6 +188,21 @@ class Labirinto(Problem):
                 break
         return (state, cost, obj)
     
+    def calculate_next_position(self, current_position, direction, speed):
+    # Map direction to coordinate changes (assuming N, S, E, W directions)
+        direction_deltas = {
+            'N': (-speed, 0),  # Move up
+            'S': (speed, 0),   # Move down
+            'E': (0, speed),   # Move right
+            'O': (0, -speed)   # Move left
+                            }
+        delta = direction_deltas[direction]
+        return (current_position[0] + delta[0], current_position[1] + delta[1])
+    
+    
+    def is_within_bounds(self, position):
+    # Check if position is within the maze boundaries
+        return 0 <= position[0] < len(self.LabInicial) and 0 <= position[1] < len(self.LabInicial[0])
 
 
 
@@ -207,4 +210,18 @@ class Labirinto(Problem):
 
 
 
-#lets consider a state: ((Coordinates), (Orientation), (Velocity))
+line1 = "= = = = = = = = = =\n"
+line2 = "= x . . . . . . . =\n"
+line3 = "= . . . = . . . . =\n"
+line4 = "= . . . = . = . . =\n"
+line5 = "= = = . = . = . . =\n"
+line6 = "= > . . . . . . = =\n"
+line7 = "= = = = = = = = = =\n"
+grelha2 = line1 + line2 + line3 + line4 + line5 + line6 + line7
+p = Labirinto(grelha2)
+resultado = breadth_first_graph_search(p)
+if resultado:
+    print("Solução Larg-prim (grafo) com custo", str(resultado.path_cost)+":")
+    print(resultado.solution())
+else:
+    print("Sem solução!")
