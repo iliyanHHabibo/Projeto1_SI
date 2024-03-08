@@ -105,7 +105,51 @@ class Labirinto(Problem):
         return sorted(accoes)
 
     def result(self, state, action):
-        pass
+        (coordenadas, orientacao, vcurrent) = state
+        (i,j) = coordenadas
+        if action == 'E':
+            if orientacao == 'N':
+                orientacao = 'O'
+            elif orientacao == 'S':
+                orientacao = 'E'
+            elif orientacao == 'E':
+                orientacao = 'N'
+            else:
+                orientacao = 'S'
+        if action == 'D':
+            if orientacao == 'N':
+                orientacao = 'E'
+            elif orientacao == 'S':
+                orientacao = 'O'
+            elif orientacao == 'E':
+                orientacao = 'S'
+            else:
+                orientacao = 'N'
+        #check this part
+        if action == 'A':
+            if orientacao == 'N':
+                coordenadas = (i - vcurrent - 1, j)
+            elif orientacao == 'S':
+                coordenadas = (i + vcurrent + 1, j)
+            elif orientacao == 'E':
+                coordenadas = (i, j + vcurrent + 1)
+            else:
+                coordenadas = (i, j - vcurrent - 1)
+        if action == 'T':
+            vcurrent -= 1
+            if vcurrent > 0:
+                if orientacao == 'N':
+                    coordenadas = (i - vcurrent - 1, j)
+                elif orientacao == 'S':
+                    coordenadas = (i + vcurrent + 1, j)
+                elif orientacao == 'E':
+                    coordenadas = (i, j + vcurrent + 1)
+                else:
+                    coordenadas = (i, j - vcurrent - 1)
+        if action == 'A':
+            vcurrent += 1
+
+        return (coordenadas, orientacao, vcurrent)
 
     def goal_test(self, state):
         pass
