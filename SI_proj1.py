@@ -5,7 +5,7 @@ line2 = "= x . . . . =\n"
 line3 = "= . . . = . =\n"
 line4 = "= . . . = . =\n"
 line5 = "= = = . = . =\n"
-line6 = "= . . . v . =\n"
+line6 = "= ^ . . . . =\n"
 line7 = "= = = = = = =\n"
 grelha = line1 + line2 + line3 + line4 + line5 + line6 + line7
 
@@ -152,10 +152,32 @@ class Labirinto(Problem):
         return (coordenadas, orientacao, vcurrent)
 
     def goal_test(self, state):
-        pass
+        if state[0] == self.goal:
+            return True
+        return False
 
     def display(self, state):
-        pass
+        """Primeiramente limpa o estado do labirinto para que não exista nenhum veiculo e introduz a posicao do veiculo e a orientacao do mesmo no labirinto"""
+        temp = self.LabInicial.copy()
+        temp = [list(row) for row in temp]
+        for x in range(len(temp)):
+            for y in range(len(temp[x])):
+                if temp[x][y] == '^' or temp[x][y] == 'v' or temp[x][y] == '<' or temp[x][y] == '>':
+                    temp[x][y] = '.' #limpar o veiculo
+        (coordenadas, orientacao, vcurrent) = state
+        for x in range(len(temp)):
+            for y in range(len(temp[x])):
+                if (x,y) == coordenadas:
+                    if orientacao == 'N':
+                        temp[x][y] = '^'
+                    elif orientacao == 'S':
+                        temp[x][y] = 'v'
+                    elif orientacao == 'E':
+                        temp[x][y] = '>'
+                    else:
+                        temp[x][y] = '<'
+        return '\n'.join([' '.join(row) for row in temp])
+                    
 
     def executa(self, state, actions_list, verbose=False):
         """Executa uma sequência de acções a partir do estado devolvendo o triplo formado pelo estado, 
@@ -182,15 +204,7 @@ class Labirinto(Problem):
 
 
 
-l = Labirinto()
-print(l.LabInicial)
-print (l.initial)
-print (l.orientacao)
-print (l.goal)
-print (l.height)
-print (l.width)
-print(l.vcurrent)
-print(l.actions(l.initial))
+
 
 
 #lets consider a state: ((Coordinates), (Orientation), (Velocity))
