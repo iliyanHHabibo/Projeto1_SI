@@ -14,9 +14,7 @@ class Labirinto(Problem):
     def __init__(self, LabInicial=grelha, vmax=3):
         #dividir a grelha em strings que sao as linhas
         LabInicial = LabInicial.split('\n')
-        
-        #eliminar a última linha vazia
-        LabInicial.pop()
+
 
         #fazer com que lab inicial seja uma lista de listas e cada elemento das sublistas seja um caracter
         #eg: [['=','=','=','=','=','=','='], ['=','x','.','.','.','='],...]
@@ -27,7 +25,7 @@ class Labirinto(Problem):
         self.LabInicial = LabInicial
         
         #set up dimensoes do labirinto
-        self.height = len(self.LabInicial)
+        self.height = len(self.LabInicial)-1
         self.width = len(self.LabInicial[0]) 
         
         #encontrar initial position e orientacao do veiculo
@@ -45,7 +43,7 @@ class Labirinto(Problem):
                     else:
                         self.orientacao = 'E'
                     break
-    
+        
         #encontrar goal position
         for i in range(len(self.LabInicial)):
             for j in range(len(self.LabInicial[i])):
@@ -140,7 +138,8 @@ class Labirinto(Problem):
         return (coordenadas, orientacao, vcurrent)
 
     def goal_test(self, state):
-        if state[0] == self.goal:
+        #se chegamos ao goal e a velocidade é 0 (porque o carro tem que estar estacionado), entao o goal foi atingido
+        if state[0] == self.goal and state[2] == 0:
             return True
         return False
 
@@ -202,9 +201,7 @@ class Labirinto(Problem):
     
     def is_within_bounds(self, position):
     # Check if position is within the maze boundaries
-        return 0 <= position[0] < len(self.LabInicial) and 0 <= position[1] < len(self.LabInicial[0])
-
-
+        return 0 <= position[0] < self.height and 0 <= position[1] < self.width
 
 
 
@@ -225,3 +222,23 @@ if resultado:
     print(resultado.solution())
 else:
     print("Sem solução!")
+
+actions_list = ['A', 'T', 'A', 'T', 'E', 'A', 'T', 'A', 'T', 'A', 'T', 'A', 'T', 'E', 'A', 'T', 'A', 'T']
+
+# Call the executa method with verbose=True
+initial_state = p.initial
+final_state, total_cost, goal_reached = p.executa(initial_state, actions_list, verbose=True)
+
+# Display the final state and other information
+print("Final State:")
+print(p.display(final_state))
+print("Total Cost:", total_cost)
+print("Goal Reached:", goal_reached)
+
+
+    #DISPLAY: NAO TIRAR O ultimo /n
+    #fazer testes 
+    #se nao ha açoes possiveis: se vamos bater mesmo que travemos, devolvemos lista de actions vazia
+    #testar executa com o verboso a true e conseguimos validar se cada uma das açoes esta correta ou nao
+    #pensar em situações em que o carro nao pode fazer nada e ver como podemos corrigir
+    #vel 0 vel 1 vel 2. testar o codigo. qual e a lista de açoes quando isto acontece
