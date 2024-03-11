@@ -67,18 +67,22 @@ class Labirinto(Problem):
         possible_actions = []
 
     # Check if the car can accelerate ('A')
-        if vcurrent < vmax:
+     #if vcurrent = vmax, it can still accelerate but it will not go faster than vmax
+        if vcurrent <= vmax:
         # Check next position based on current direction and make sure it's not a wall
             next_pos = self.calculate_next_position(coordenadas, direcao, vcurrent + 1)
             if self.is_within_bounds(next_pos) and self.LabInicial[next_pos[0]][next_pos[1]] != '=':
-                possible_actions.append('A')
+                if "=" not in self.path_ahead(state): #check if there isnt a wall in the car's path
+                    possible_actions.append('A')
 
     # Check if the car can brake ('T') without going below zero speed
-        if vcurrent > 0:
+    #if vcurrent = 0, it can still brake but it will not go slower than 0
+        if vcurrent >= 0:
         # Check next position based on current direction at one less speed (decelerating)
             next_pos = self.calculate_next_position(coordenadas, direcao, vcurrent - 1)
             if self.is_within_bounds(next_pos) and self.LabInicial[next_pos[0]][next_pos[1]] != '=':
-                possible_actions.append('T')
+                if "=" not in self.path_ahead(state): #check if there isnt a wall in the car's path
+                    possible_actions.append('T')
 
     # Check if the car can turn left ('E') or right ('D'), only if the speed is 0
         if vcurrent == 0:
@@ -93,6 +97,7 @@ class Labirinto(Problem):
     def result(self, state, action):
         (coordenadas, orientacao, vcurrent) = state
         (i,j) = coordenadas
+        
         if action == 'E':
             if orientacao == 'N':
                 orientacao = 'O'
@@ -102,6 +107,7 @@ class Labirinto(Problem):
                 orientacao = 'N'
             else:
                 orientacao = 'S'
+       
         if action == 'D':
             if orientacao == 'N':
                 orientacao = 'E'
@@ -111,7 +117,7 @@ class Labirinto(Problem):
                 orientacao = 'S'
             else:
                 orientacao = 'N'
-        #check this part
+
         if action == 'A':
             if orientacao == 'N':
                 coordenadas = (i - vcurrent - 1, j)
@@ -121,6 +127,14 @@ class Labirinto(Problem):
                 coordenadas = (i, j + vcurrent + 1)
             else:
                 coordenadas = (i, j - vcurrent - 1)
+            
+        #update velocity
+        if action == 'A':
+            if vcurrent == self.vmax:
+                vcurrent = self.vmax #se a velocidade atual ja e a maxima, nao podemos acelerar mais
+            else:
+                vcurrent += 1
+        
         if action == 'T':
             vcurrent -= 1
             if vcurrent > 0:
@@ -132,8 +146,7 @@ class Labirinto(Problem):
                     coordenadas = (i, j + vcurrent + 1)
                 else:
                     coordenadas = (i, j - vcurrent - 1)
-        if action == 'A':
-            vcurrent += 1
+            
 
         return (coordenadas, orientacao, vcurrent)
 
@@ -203,9 +216,26 @@ class Labirinto(Problem):
     # Check if position is within the maze boundaries
         return 0 <= position[0] < self.height and 0 <= position[1] < self.width
 
+    def path_ahead(self, state):
+        """returns list of symbols of the path ahead of the car. we're gonna use it to check if we can brake the car"""
+        #isto passara como condiçao no actions para acelerar ou travar
+        #nenhum simbolo da lista pode ser um =, se nao, nao podemos travar ou acelerar. o carro nao pode atravessar paredes
+        (coordenadas, orientacao, vcurrent) = state
+        path = []
+        if orientacao == 'N':
+            for i in range(1, vcurrent + 1):
+                path.append(self.LabInicial[coordenadas[0] - i][coordenadas[1]])
+        elif orientacao == 'S':
+            for i in range(1, vcurrent + 1):
+                path.append(self.LabInicial[coordenadas[0] + i][coordenadas[1]])
+        elif orientacao == 'E':
+            for i in range(1, vcurrent + 1):
+                path.append(self.LabInicial[coordenadas[0]][coordenadas[1] + i])
+        elif orientacao == 'O':
+            for i in range(1, vcurrent + 1):
+                path.append(self.LabInicial[coordenadas[0]][coordenadas[1] - i])
 
-
-
+        return path
 
 line1 = "= = = = = = = = = =\n"
 line2 = "= x . . . . . . . =\n"
@@ -236,7 +266,6 @@ print("Total Cost:", total_cost)
 print("Goal Reached:", goal_reached)
 
 
-    #DISPLAY: NAO TIRAR O ultimo /n
     #fazer testes 
     #se nao ha açoes possiveis: se vamos bater mesmo que travemos, devolvemos lista de actions vazia
     #testar executa com o verboso a true e conseguimos validar se cada uma das açoes esta correta ou nao
