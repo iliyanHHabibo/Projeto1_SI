@@ -9,161 +9,101 @@ line6 = "= ^ . . . . =\n"
 line7 = "= = = = = = =\n"
 grelha = line1 + line2 + line3 + line4 + line5 + line6 + line7
 
+
 class Labirinto(Problem):
 
     def __init__(self, LabInicial=grelha, vmax=3):
-        #dividir a grelha em strings que sao as linhas
+        """Construtor do problema do labirinto. O estado inicial é uma string com o labirinto e a velocidade máxima"""
         LabInicial = LabInicial.split('\n')
-        
-        #eliminar a última linha vazia
-        LabInicial.pop()
-
-        #fazer com que lab inicial seja uma lista de listas e cada elemento das sublistas seja um caracter
-        #eg: [['=','=','=','=','=','=','='], ['=','x','.','.','.','='],...]
-        #remover os espacos
+        LabInicial.pop() 
         for i in range(len(LabInicial)):
-            LabInicial[i] = list(LabInicial[i].replace(' ','')) #replace remove os espacos
-
+            LabInicial[i] = list(LabInicial[i].replace(' ', ''))  
         self.LabInicial = LabInicial
-        
-        #set up dimensoes do labirinto
         self.height = len(self.LabInicial)
-        self.width = len(self.LabInicial[0]) 
-        
-        #encontrar initial position e orientacao do veiculo
-        for i in range(len(self.LabInicial)):
-            for j in range(len(self.LabInicial[i])):
-                if self.LabInicial[i][j] == '^' or self.LabInicial[i][j] == 'v' or self.LabInicial[i][j] == '<' or self.LabInicial[i][j] == '>':
-                    self.coordenadas = (i,j)
-                    #encontrar orientacao (N, S, E, O)
-                    if self.LabInicial[i][j] == '^':
-                        self.orientacao = 'N'
-                    elif self.LabInicial[i][j] == 'v':
-                        self.orientacao = 'S'
-                    elif self.LabInicial[i][j] == '<':
-                        self.orientacao = 'O'
-                    else:
-                        self.orientacao = 'E'
-                    break
-    
-        #encontrar goal position
-        for i in range(len(self.LabInicial)):
-            for j in range(len(self.LabInicial[i])):
-                if self.LabInicial[i][j] == 'x':
-                    self.goal = (i,j)
-                    break
-
-        #fazer set de velocidade maxima
+        self.width = len(self.LabInicial[0])
         self.vmax = vmax
 
-        #fazer set da velocidade inicial. assumimos que o veiculo comeca parado
-        self.vcurrent = 0 
 
         #estado inicial
-        self.initial = (self.coordenadas, self.orientacao, self.vcurrent)
+        self.set_initial_and_goal_states()
+        
+    def set_initial_and_goal_states(self):
+        """Define o estado inicial e o estado objectivo. O estado inicial é uma tripla com a posição, a orientação e a velocidade do veículo. O estado objectivo é a posição onde se encontra o objectivo."""
+        symbol_to_orientation = {'^': 'N', '>': 'E', 'v': 'S', '<': 'O'}  
+        for i, row in enumerate(self.LabInicial):
+            for j, val in enumerate(row):
+                if val in '^v<>':  #Verifica se o valor é um dos símbolos dos veículos
+                    self.initial = ((i, j), symbol_to_orientation[val], 0)  #Estado inicial com a posição, orientação e velocidade
+                    self.LabInicial[i][j] = '.'  # Substitui o símbolo do veículo por um ponto
+                    
+                elif val == 'x':  # Verifica se o valor é o símbolo do objectivo
+                    self.goal = (i, j)
 
     def actions(self, state):
-        """Return the actions that can be executed in the given state."""
-        actions = []
-        coordenadas, direcao, vcurrent = state
+        coordenadas, orientacao, vcurrent = state
+        possible_actions = []
+
+        #Verifica se é possível acelerar ou travar
+        if vcurrent == 0:
+            possible_actions.extend(['E', 'D'])
+
+
+        if vcurrent < self.vmax:
+            next_pos = self.calculate_next_position(coordenadas, orientacao, vcurrent + 1)
+            if self.is_within_bounds(next_pos) and self.LabInicial[next_pos[0]][next_pos[1]] != '=':
+                if "=" not in self.path_ahead(state):
+                    possible_actions.append('A')
+            
+        if vcurrent > 0:
+            next_pos = self.calculate_next_position(coordenadas, orientacao, vcurrent - 1)
+            if self.is_within_bounds(next_pos) and self.LabInicial[next_pos[0]][next_pos[1]] != '=':
         
-        # Check if we can accelerate, decelerate, or maintain speed without hitting a wall
-        # Ensure that we stay within the bounds of the maze
-        if vcurrent > 0:  # Moving forward
-            if coordenadas[0] + vcurrent + 1 < len(self.LabInicial) and \
-               self.LabInicial[coordenadas[0] + vcurrent + 1][coordenadas[1]] != "=":
-                actions.append('A')  # Accelerate
-            if 0 <= coordenadas[0] - vcurrent - 1 and \
-               self.LabInicial[coordenadas[0] - vcurrent - 1][coordenadas[1]] != "=":
-                actions.append('D')  # Decelerate
-        elif vcurrent == 0:  # If not moving, can start moving or stay
-            actions.extend(['A', 'D'])  # Can either accelerate or decelerate (which would still be staying still)
-    
-        # Check if turning is possible without going out of bounds or hitting a wall
-        # This requires checking different conditions based on the current direction
-        # For simplicity, I'm assuming the car can always turn unless specified in your problem's logic
-    
-        actions.extend(['L', 'R'])  # Left and Right turn actions
-    
-        # Note: You may need to adapt turning conditions based on your maze's logic and vehicle dynamics.
-        
-        return actions
+                 possible_actions.append('T')
 
-    def result(self, state, action):
-        (coordenadas, orientacao, vcurrent) = state
-        (i,j) = coordenadas
-        if action == 'E':
-            if orientacao == 'N':
-                orientacao = 'O'
-            elif orientacao == 'S':
-                orientacao = 'E'
-            elif orientacao == 'E':
-                orientacao = 'N'
-            else:
-                orientacao = 'S'
-        if action == 'D':
-            if orientacao == 'N':
-                orientacao = 'E'
-            elif orientacao == 'S':
-                orientacao = 'O'
-            elif orientacao == 'E':
-                orientacao = 'S'
-            else:
-                orientacao = 'N'
-        #check this part
-        if action == 'A':
-            if orientacao == 'N':
-                coordenadas = (i - vcurrent - 1, j)
-            elif orientacao == 'S':
-                coordenadas = (i + vcurrent + 1, j)
-            elif orientacao == 'E':
-                coordenadas = (i, j + vcurrent + 1)
-            else:
-                coordenadas = (i, j - vcurrent - 1)
-        if action == 'T':
-            vcurrent -= 1
-            if vcurrent > 0:
-                if orientacao == 'N':
-                    coordenadas = (i - vcurrent - 1, j)
-                elif orientacao == 'S':
-                    coordenadas = (i + vcurrent + 1, j)
-                elif orientacao == 'E':
-                    coordenadas = (i, j + vcurrent + 1)
-                else:
-                    coordenadas = (i, j - vcurrent - 1)
-        if action == 'A':
-            vcurrent += 1
-
-        return (coordenadas, orientacao, vcurrent)
-
-    def goal_test(self, state):
-        if state[0] == self.goal:
-            return True
-        return False
+        return sorted(possible_actions)
 
     def display(self, state):
-        """Primeiramente limpa o estado do labirinto para que não exista nenhum veiculo e introduz a posicao do veiculo e a orientacao do mesmo no labirinto"""
-        temp = self.LabInicial.copy()
-        temp = [list(row) for row in temp]
-        for x in range(len(temp)):
-            for y in range(len(temp[x])):
-                if temp[x][y] == '^' or temp[x][y] == 'v' or temp[x][y] == '<' or temp[x][y] == '>':
-                    temp[x][y] = '.' #limpar o veiculo
-        (coordenadas, orientacao, vcurrent) = state
-        for x in range(len(temp)):
-            for y in range(len(temp[x])):
-                if (x,y) == coordenadas:
-                    if orientacao == 'N':
-                        temp[x][y] = '^'
-                    elif orientacao == 'S':
-                        temp[x][y] = 'v'
-                    elif orientacao == 'E':
-                        temp[x][y] = '>'
-                    else:
-                        temp[x][y] = '<'
-        return '\n'.join([' '.join(row) for row in temp])
+        """Retorna uma string com a representação do estado"""
+        display_grid = [row[:] for row in self.LabInicial]
+
+        
+        (x, y), orientation, _ = state
+
+
+        orientation_to_symbol = {'N': '^', 'E': '>', 'S': 'v', 'O': '<'}
+        vehicle_symbol = orientation_to_symbol[orientation]
+
+        
+        display_grid[x][y] = vehicle_symbol
+
+       
+        display_string = '\n'.join([' '.join(row) for row in display_grid])
+        return display_string
+
                     
 
+    def result(self, state, action):
+        """Retorna o estado seguinte após a execução da ação"""
+        coordenadas, orientacao, vcurrent = state 
+
+        #Criar novas variáveis para o novo estado
+        new_coordenadas, new_orientacao, new_vcurrent = coordenadas, orientacao, vcurrent
+
+        if action == 'A':  
+            new_vcurrent = min(vcurrent + 1, self.vmax)
+        elif action == 'T':  
+            new_vcurrent = max(vcurrent - 1, 0)
+        elif action == 'E':  
+            new_orientacao = {'N': 'O', 'O': 'S', 'S': 'E', 'E': 'N'}[orientacao]
+        elif action == 'D': 
+            new_orientacao = {'N': 'E', 'E': 'S', 'S': 'O', 'O': 'N'}[orientacao]
+
+     
+        if new_vcurrent > 0:
+            new_coordenadas = self.calculate_next_position(coordenadas, new_orientacao, new_vcurrent)
+
+        
+        return (new_coordenadas, new_orientacao, new_vcurrent)
     def executa(self, state, actions_list, verbose=False):
         """Executa uma sequência de acções a partir do estado devolvendo o triplo formado pelo estado, 
             pelo custo acumulado e pelo booleano que indica se o objectivo foi ou não atingido. Se o objectivo 
@@ -184,4 +124,57 @@ class Labirinto(Problem):
             if obj:
                 break
         return (state, cost, obj)
+
+    def goal_test(self, state):
+         position, _, speed = state
+         return position == self.goal and speed == 0
+
+    def calculate_next_position(self, current_position, direction, speed):
+        direction_deltas = {'N': (-speed, 0), 'S': (speed, 0), 'E': (0, speed), 'O': (0, -speed)}
+        delta = direction_deltas[direction]
+        return (current_position[0] + delta[0], current_position[1] + delta[1])
     
+    def is_within_bounds(self, position):
+        return 0 <= position[0] < self.height and 0 <= position[1] < self.width
+    def path_ahead(self, state):
+        """returns list of symbols of the path ahead of the car. we're gonna use it to check if we can brake the car"""
+        #isto passara como condiçao no actions para acelerar ou travar
+        #nenhum simbolo da lista pode ser um =, se nao, nao podemos travar ou acelerar. o carro nao pode atravessar paredes
+        (coordenadas, orientacao, vcurrent) = state
+        path = []
+        if orientacao == 'N':
+            for i in range(1, vcurrent + 1):
+                path.append(self.LabInicial[coordenadas[0] - i][coordenadas[1]])
+        elif orientacao == 'S':
+            for i in range(1, vcurrent + 1):
+                path.append(self.LabInicial[coordenadas[0] + i][coordenadas[1]])
+        elif orientacao == 'E':
+            for i in range(1, vcurrent + 1):
+                path.append(self.LabInicial[coordenadas[0]][coordenadas[1] + i])
+        elif orientacao == 'O':
+            for i in range(1, vcurrent + 1):
+                path.append(self.LabInicial[coordenadas[0]][coordenadas[1] - i])
+
+        return path
+
+
+
+
+line1 = "= = = = = = = = = =\n"
+line2 = "= x . . . . . . . =\n"
+line3 = "= . . . = . . . . =\n"
+line4 = "= . . . = . = . . =\n"
+line5 = "= = = . = . = . . =\n"
+line6 = "= > . . . . . . = =\n"
+line7 = "= = = = = = = = = =\n"
+grelha2 = line1 + line2 + line3 + line4 + line5 + line6 + line7
+p = Labirinto(grelha2)
+resultado = breadth_first_graph_search(p)
+if resultado:
+    print("Solução Larg-prim (grafo) com custo", str(resultado.path_cost)+":")
+    actions_list=resultado.solution()
+    print(resultado.solution())
+    initial_state = p.initial
+    final_state, total_cost, goal_reached = p.executa(initial_state, actions_list, verbose=True)
+else:
+    print("Sem solução!")
