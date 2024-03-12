@@ -47,7 +47,8 @@ class Labirinto(Problem):
         if vcurrent == 0:
             possible_actions.extend(['E', 'D'])
 
-
+        if vcurrent == self.vmax:
+            possible_actions.append('A')
         if vcurrent < self.vmax:
             next_pos = self.calculate_next_position(coordenadas, orientacao, vcurrent + 1)
             if self.is_within_bounds(next_pos) and self.LabInicial[next_pos[0]][next_pos[1]] != '=':
